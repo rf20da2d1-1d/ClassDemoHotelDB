@@ -23,9 +23,18 @@ namespace ClassDemoHotelDB
                 Console.WriteLine(g);
             }
 
+            Guest nyGuest = new Guest(55, "Peter", "Roskilde");
+            Console.WriteLine("guest oprettet " + AddGuest(nyGuest));
+            Console.WriteLine("guest findes oprettet " + AddGuest(new Guest(5, "Peter", "Roskilde")));
+
+            nyGuest.Address = "4000 Roskilde";
+            nyGuest.Name = "Peter Levinsky";
+            Console.WriteLine("Guest opdateret " + UpdateGuest(nyGuest));
+            Console.WriteLine("guest 55 = " + GetGuestsbyId(55));
+
             try
             {
-                Guest guest = DeleteGuest(50);
+                Guest guest = DeleteGuest(55);
                 Console.WriteLine("Slettet " + guest);
             }
             catch (KeyNotFoundException e)
@@ -33,6 +42,8 @@ namespace ClassDemoHotelDB
                 Console.WriteLine(e.Message);
             }
 
+            Guest guestFindesIkke = new Guest(155, "Peter2", "Roskilde2");
+            Console.WriteLine("Guest opdateret " + UpdateGuest(guestFindesIkke));
         }
 
 
@@ -115,6 +126,58 @@ namespace ClassDemoHotelDB
                 }
             }
             throw new KeyNotFoundException("Der var ingen med id = " + id);
+        }
+
+        private const String AddGuestSQL = "insert into Guest (Guest_No, Name, Address) values (@ID, @NAME, @ADDRESS)";
+        private bool AddGuest(Guest guest)
+        {
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                using (SqlCommand sql = new SqlCommand(AddGuestSQL, conn))
+                {
+                    sql.Parameters.AddWithValue("@ID", guest.Id);
+                    sql.Parameters.AddWithValue("@NAME", guest.Name);
+                    sql.Parameters.AddWithValue("@ADDRESS", guest.Address);
+
+                    // her sendes sql kommando (insert,delete eller update) til databasen
+                    // svaret er antal rækker der er berørt af denne sql request fx. 0 = ingen slettet; 1 = en er slettet
+                    try
+                    {
+                        int rowsAffected = sql.ExecuteNonQuery();
+                        return true;
+                    }
+                    catch (Exception e)
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        private const String UpdateGuestSQL = "update Guest set Guest_No =@ID, Name = @NAME, Address = @ADDRESS where Guest_No = @GID";
+        private bool UpdateGuest(Guest guest)
+        {
+            using (SqlConnection conn = new SqlConnection(ConnectionString))
+            {
+                conn.Open();
+
+                using (SqlCommand sql = new SqlCommand(UpdateGuestSQL, conn))
+                {
+                    sql.Parameters.AddWithValue("@ID", guest.Id);
+                    sql.Parameters.AddWithValue("@NAME", guest.Name);
+                    sql.Parameters.AddWithValue("@ADDRESS", guest.Address);
+                    sql.Parameters.AddWithValue("@GID", guest.Id);
+
+
+                    // her sendes sql kommando (insert,delete eller update) til databasen
+                    // svaret er antal rækker der er berørt af denne sql request fx. 0 = ingen opdateret;  1 = en er opdateret
+                    int rowsAffected = sql.ExecuteNonQuery();
+
+                    return (rowsAffected == 1);
+                }
+            }
         }
 
 
